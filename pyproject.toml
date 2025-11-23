@@ -7,9 +7,26 @@ requires-python = ">=3.11.14"
 dependencies = [
     "elasticsearch>=9.2.0",
     "faster-whisper>=1.2.1",
+    "jaxn>=0.0.1",
+    "logfire>=4.14.2",
+    "numpy>=2.3.5",
+    "openai-agents>=0.6.1",
     "pandas>=2.3.3",
     "psycopg>=3.2.12",
+    "pydantic-ai>=1.20.0",
     "requests>=2.32.5",
     "sentence-transformers>=5.1.2",
+    "streamlit>=1.40.0",
     "tqdm>=4.67.1",
+    "urllib3>=2.5.0",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.1.0",
+    "jupyterlab>=4.5.0",
+    "numpy>=2.3.5",
+    "openpyxl>=3.1.5",
+    "pytz>=2025.2",
+    "toyaikit>=0.0.8",
 ]
