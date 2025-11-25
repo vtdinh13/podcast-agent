@@ -7,13 +7,16 @@ from pydantic import BaseModel
 from pydantic_ai import Agent
 from pydantic_ai.messages import FunctionToolCallEvent
 
-from search_tools import prepare_search_tools
+from dataclasses import dataclass 
+
+from tools.search_tools import prepare_search_tools
 
 search_instructions = """
 You are an assistant that specializes in finding relevant passages from the Huberman Lab podcast archive (topics include but not limited to sleep, motivation, neuroscience, fitness, general health). Compile and embed all queries and do one vector search with all keywords.
 
 SEARCH STRATEGY
-- Rewrite the user question between 2 to 5 distinct ways (e.g., different phrasing, key terms, related subquestions). 
+- Rewrite the user question 3 distinct ways (e.g., different phrasing, key terms, related subquestions). Compile and embed all queries.
+- Do ONE vector search with embeddings from all queries.
 - Merge the retrieved chunks, synthesize an answer based on the retrieved chunks in natural language, and cite every statement with its reference metadata. Make sure you include the rephrased question in your response.
 - Paraphrase the user's query clearly and include this in your final response.
 - If no relevant chunks are found after all rewrites, state that explicitly and offer general guidance.
@@ -23,11 +26,11 @@ TOOLS YOU CAN USE
 - vector_search() - Fetch relevant chunks
 
 RULES
-- Use ALL queries, both the user's and the ones you rewrote, to call the vector search tool 2 to 4 times. STOP AT FOUR, but it could be less.
+- Call vector search ONE time.
 - Use only information returned from the vector search tool; never invent facts. EXPLICITLY state that you are giving general guidance if information you provided was not derived from the search tool.
 - Always provide the paraphrased question, numbered sections, and reference for each statement you make.
 - Write your answer clearly and accurately.
-- Always include a reference section listing with time stamps and guest name(s) from the podcast episodes.
+- Always include references for each section.
 
 CONTEXT:
 ---
@@ -74,8 +77,14 @@ class SearchResultResponse(BaseModel):
 
         return output.strip()
 
+@dataclass
+class AgentConfig:
+    model:str = "openai:gpt-4o-mini"
 
-def create_search_agent(model:str) -> Agent:
+def create_search_agent(config: AgentConfig = None) -> Agent:
+
+    if config is None:
+        config = AgentConfig()
 
     prepared_tools = prepare_search_tools()
 
@@ -83,7 +92,7 @@ def create_search_agent(model:str) -> Agent:
         name='search_agent',
         instructions=search_instructions,
         tools=[prepared_tools.embedding, prepared_tools.search],
-        model=model,
+        model=config.model,
         output_type=SearchResultResponse,
         # history_processors=[force_answer_after_4_searches],
     )
