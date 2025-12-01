@@ -3,7 +3,7 @@ import json
 from typing import Any, Dict, List
 
 import streamlit as st
-from pydantic_ai.messages import FunctionToolCallEvent
+from pydantic_ai.messages import FunctionToolCallEvent, ModelRequest, ModelResponse, TextPart
 
 from multipurpose_agent import create_search_agent
 
@@ -47,8 +47,7 @@ def make_tool_logger(
     lines: List[str], placeholder: st.delta_generator.DeltaGenerator
 ):
     tool_labels = {
-        "embed_query": "Embedding query...",
-        "vector_search": "Searching Elasticsearch..",
+        "search_embeddings": "Searching Elasticsearch..",
         "web_search": "Searching the web...",
         "get_page_content": "Fetching content...",
     }
@@ -62,10 +61,11 @@ def make_tool_logger(
 
             if isinstance(ev, FunctionToolCallEvent):
                 tool_name = ev.part.tool_name
-                label = tool_labels.get(tool_name, tool_name)
+                if tool_name == "final_result":
+                    return
                 args = parse_args(getattr(ev.part, "args", None))
 
-                description = f"- `{tool_name}` · {label}"
+                description = f"- `{tool_name}`"
                 query = args.get("query")
                 if query:
                     description += f" · **query:** {query}"
@@ -81,7 +81,14 @@ def make_tool_logger(
     return _logger
 
 
-HISTORY_WINDOW = 4
+def build_summary_messages(question: str, summary: str) -> List[Any]:
+    """Create compact user/assistant messages from the latest exchange."""
+    request = ModelRequest.user_text_prompt(question.strip())
+    response = ModelResponse(parts=[TextPart(summary.strip())])
+    return [request, response]
+
+
+HISTORY_WINDOW = 3
 
 
 st.set_page_config(page_title="Multipurpose Research Agent", page_icon="🧠", layout="wide")
@@ -100,6 +107,9 @@ with st.sidebar:
         st.success("Agent cache cleared.")
 
     clear_chat = st.button("Clear Conversation")
+    if st.button("Stop loading", type="primary"):
+        st.warning("Stopping response...")
+        st.stop()
     st.divider()
     st.markdown("**Notes**")
     st.markdown(
@@ -147,42 +157,52 @@ if user_question:
         tool_logger = make_tool_logger(tool_lines, tool_placeholder)
         answer_placeholder = st.empty()
 
-        with st.spinner("Thinking..."):
-            try:
-                history = st.session_state["message_history"]
-                recent_history = history[-HISTORY_WINDOW:] if HISTORY_WINDOW else history
-                result = run_agent(
-                    agent,
-                    user_question.strip(),
-                    recent_history,
-                    tool_logger,
-                )
-            except Exception as exc:
-                tool_placeholder.empty()
-                st.error(f"Something went wrong: {exc}")
+        status_placeholder = st.empty()
+        status_placeholder.info("Generating response...")
+        try:
+            history = st.session_state["message_history"]
+            recent_history = history[-HISTORY_WINDOW:] if HISTORY_WINDOW else history
+            result = run_agent(
+                agent,
+                user_question.strip(),
+                recent_history,
+                tool_logger,
+            )
+        except Exception as exc:
+            status_placeholder.empty()
+            tool_placeholder.empty()
+            st.error(f"Something went wrong: {exc}")
+        else:
+            status_placeholder.empty()
+            output = getattr(result, "output", None)
+            if hasattr(output, "format_response"):
+                answer_md = output.format_response()
+            elif hasattr(output, "model_dump"):
+                answer_md = json.dumps(output.model_dump(), indent=2)
             else:
-                output = getattr(result, "output", None)
-                if hasattr(output, "format_response"):
-                    answer_md = output.format_response()
-                elif hasattr(output, "model_dump"):
-                    answer_md = json.dumps(output.model_dump(), indent=2)
-                else:
-                    answer_md = str(output)
+                answer_md = str(output)
 
-                answer_placeholder.markdown(answer_md)
-                st.session_state["chat_history"].append(
-                    {
-                        "question": user_question,
-                        "answer": answer_md,
-                        "tool_activity": list(tool_lines),
-                    }
+            answer_placeholder.markdown(answer_md)
+            st.session_state["chat_history"].append(
+                {
+                    "question": user_question,
+                    "answer": answer_md,
+                    "tool_activity": list(tool_lines),
+                }
+            )
+            try:
+                description_summary = getattr(output, "description", None)
+                summary_text = (
+                    description_summary.strip()
+                    if isinstance(description_summary, str) and description_summary.strip()
+                    else answer_md
                 )
-                try:
-                    st.session_state["message_history"].extend(result.new_messages())
-                except Exception:
-                    st.warning(
-                        "Unable to store the latest conversation context for follow-up questions."
-                    )
+                compact_messages = build_summary_messages(user_question, summary_text)
+                st.session_state["message_history"].extend(compact_messages)
+            except Exception:
+                st.warning(
+                    "Unable to store the latest conversation context for follow-up questions."
+                )
 
 if not st.session_state["chat_history"]:
     st.info("Start by asking about sleep, performance, or neuroscience.")

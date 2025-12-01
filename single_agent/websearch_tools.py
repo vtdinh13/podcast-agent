@@ -58,7 +58,7 @@ def web_search(query: str, preferred_sites: List[str]):
         urls_filtered = [u for u in urls_all if any(dom in u for dom in preferred_sites)]
 
         if len(urls_filtered) > 5:
-            urls_filtered = random.sample(urls_filtered, 3)
+            urls_filtered = random.sample(urls_filtered, 5)
         return urls_filtered
 
     except (requests.exceptions.RequestException, UnicodeDecodeError) as e:
