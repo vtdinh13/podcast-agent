@@ -27,25 +27,25 @@ The diagram below outlines the development flow and supporting services.
 1. `uv` manages Python packages and the virtual environment. To replicate the project you can use either `uv` or `pip`, but using `uv` will match this repository’s workflow most closely.
 
     *Option 1*: Manage with uv  
-      - Install `uv` if it is not already on your system. See the [Astral documentation](!https://docs.astral.sh/uv/getting-started/installation/) for installation steps.  
+      - Install `uv` if it is not already on your system. See the [Astral documentation](https://docs.astral.sh/uv/getting-started/installation/) for installation steps.  
       - Run `uv sync` to install all required packages.
       
     *Option 2*: Manage with pip  
       - Run `pip install -r requirements.txt`.
 2. Docker Desktop runs the Docker Engine daemon.
-    - Download Docker Desktop if needed (refer to the [Docker Desktop docs](!https://docs.docker.com/desktop/)).
+    - Download Docker Desktop if needed (refer to the [Docker Desktop docs](https://docs.docker.com/desktop/)).
     - Start Docker Desktop so the Docker Engine daemon is available.
     - Run `docker-compose up` to start every service, or `docker-compose up -d` to run them in detached mode so the containers stay in the background while you continue working in the terminal.
 3. API keys are required.
     
     *Required keys*
 
-    - The agent uses OpenAI models. Sign up for an [OpenAI API key](!https://auth.openai.com/create-account) if you don't already have one. 
-    - The Brave API powers the web search tool. Register for a [Brave API key](!https://api-dashboard.search.brave.com/register).
+    - The agent uses OpenAI models. Sign up for an [OpenAI API key](https://auth.openai.com/create-account) if you don't already have one. 
+    - The Brave API powers the web search tool. Register for a [Brave API key](https://api-dashboard.search.brave.com/register).
 
     *Optional keys*
       
-      - Local vector databases are sufficient, but if you want to upload embeddings to the cloud, generate keys from [Elasticsearch](!https://cloud.elastic.co/registration?pg=global&plcmt=nav&cta=205352-primary) or [Qdrant](!https://login.cloud.qdrant.io/u/signup/identifier?state=hKFo2SBfRTd1VlpiZHlTRFJ5a1NoUGp4T20yenJDSzhsUHI4baFur3VuaXZlcnNhbC1sb2dpbqN0aWTZIGsxZ1RDOUc0U2UxMlNjNkdWbktLcXBneEM0em9WMlNJo2NpZNkgckkxd2NPUEhPTWRlSHVUeDR4MWtGMEtGZFE3d25lemc). 
+      - Local vector databases are sufficient, but if you want to upload embeddings to the cloud, generate keys from [Elasticsearch](https://cloud.elastic.co/registration?pg=global&plcmt=nav&cta=205352-primary) or [Qdrant](https://login.cloud.qdrant.io/u/signup/identifier?state=hKFo2SBfRTd1VlpiZHlTRFJ5a1NoUGp4T20yenJDSzhsUHI4baFur3VuaXZlcnNhbC1sb2dpbqN0aWTZIGsxZ1RDOUc0U2UxMlNjNkdWbktLcXBneEM0em9WMlNJo2NpZNkgckkxd2NPUEhPTWRlSHVUeDR4MWtGMEtGZFE3d25lemc). 
 
 
 4. API keys are managed via `direnv`. Keys live in a `.env` file, and `.envrc` contains `dotenv` so the values load automatically. Example:
