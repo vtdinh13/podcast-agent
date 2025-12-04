@@ -6,11 +6,11 @@
 ![qdrant](https://img.shields.io/badge/Qdrant-v1.16-DC244C.svg?style=flat&)
 
 ## Introduction
-The Huberman Lab podcast consistently ranks in the top 5 across Apple and Spotify in the Health, Fitness, and Science categories, with over seven million YouTube subscribers. While unequivocally popular, the episodes are long and often difficult to digest. Each episode averages 120 minutes, and the longest episode, featuring Dr. Andy Galpin on "Optimal Protocols to Build Strength and Muscle", runs 279 minutes  -- that's more than 4.5 hours!
+Building lasting habits is challenging without understanding the why behind them. The Habit Builder AI Agent bridges this gap by drawing on the Huberman Lab podcast archive—a top 5 podcast on Apple and Spotify with over 7 million YouTube subscribers—to transform complex scientific insights into actionable habits supported by the latest research.
 
-The podcast offers evidenced-based insights and practical tools, but that information is hidden in excessively long episodes. This project addresses this gap by building an agentic system that acts as a personalized coach, surfaces relevant knowledge from the podcast archive, searches the web for the latest research on a requested topic, and recommends actionable takeaways. By grounding responses in expert interviews and the latest research, the agent can offer guidance and recommendations that are both scientifically sound and immediately actionable.
+This AI agent acts as a personalized coach that delivers relevant knowledge from the podcast's extensive archive, searches the web for current research, and with access to all of this knowledge, recommends actionable takeaways grounded in expert interviews and scientific evidence.
 
-This repository introduces the Podcast Research AI Agent. Audio files are downloaded via RSS, transcribed with Faster Whisper, chunked with a sliding window, and embedded with Hugging Face's Sentence Transformer model `all-MPNet-base-v2`. Qdrant stores embeddings and Streamlit offers a nice interface to interact with the agent. Code allows you to create a local version. For the full UI experience, go here. 
+Audio files are downloaded via RSS, transcribed with Faster Whisper, chunked with a sliding window, and embedded with Hugging Face's Sentence Transformer model `all-MPNet-base-v2`. Qdrant stores embeddings and Streamlit offers a nice interface to interact with the agent. Code allows you to create a local version. For the full UI experience, go here. 
 
 The agent is implemented with the Pydantic's BaseModel for strict Python data validation and PydanticAI's Agent class for structured output and agent tooling. OpenAI's `gpt-4o-mini` powers the reasoning and the tools given to the agent include: searching the knowledge base, retrieving recent research articles, and summarizing the current state of the research for a requested topic.
 
