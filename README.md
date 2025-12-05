@@ -96,8 +96,8 @@ The diagram below outlines the development flow and supporting services.
 
 ## Agent
 1. Test if the vector database and agent works. Note that the Qdrant service has to be running via Docker and that this option is limited -- you can only ask one question at a time and you cannot ask follow up questions. Run the following command on CLI: 
-    - with uv: `uv run main.py`
-    - with pip: `python main.py`
+    - with uv: `uv run habit_agent_run.py`
+    - with pip: `python habit_agent_run.py`
 2. You can also run the agent locally on Streamlit. This option includes streaming parsing and continuing conversation. Run the following command on CLI:
     - with uv: `uv run streamlit run qdrant_app.py` 
     - with pip: `python streamlit run qdrant_app.py`

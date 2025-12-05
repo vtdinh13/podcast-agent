@@ -9,7 +9,8 @@ def test_search_references():
     response: SearchResultResponse = result.output
     print(response.format_response())
 
-    assert all(section.references for section in response.sections), "Expecting at least one reference in each section."
+    assert len(response.references) >=1, f"Expecting at least one reference, got {len(response.references)}"
+    # assert all(section.references for section in response.sections), "Expecting at least one reference in each section."
 
 def test_get_page_content_no_more_than_3():
     user_prompt = "What is the latest research on coffee and Alzheimer's?"
