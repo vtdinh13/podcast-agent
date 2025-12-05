@@ -425,26 +425,35 @@ if user_question:
         st.markdown(user_question)
     logfire.log("info", "user_question_received", {"question": user_question})
 
+    agent = load_agent()
+
     guard = TokenBudget(
         encoding_name=TOKEN_ENCODING,
         max_context_tokens=MODEL_CONTEXT_LIMIT,
         cap_ratio=TOKEN_CAP_RATIO,
     )
+    agent_instructions = getattr(agent, "instructions", None)
     base_texts = gather_recent_texts(HISTORY_WINDOW) + [user_question.strip()]
+    if isinstance(agent_instructions, str) and agent_instructions.strip():
+        base_texts.append(agent_instructions.strip())
     try:
         guard.initialize(base_texts)
+        reserve_tokens = max(1000, int(MODEL_CONTEXT_LIMIT * 0.05))
+        guard.consume_tokens(reserve_tokens, label="system_overhead")
     except TokenBudgetExceeded as exc:
         logfire.log(
             "warning",
             "token_guard_block_start",
-            {"question": user_question, "attempted_tokens": exc.attempted, "cap": exc.cap},
+            {
+                "question": user_question,
+                "attempted_tokens": exc.attempted,
+                "cap": exc.cap,
+            },
         )
         st.warning(
             "I'm close to the model's context limit. Please clear the conversation or ask a shorter question."
         )
         st.stop()
-
-    agent = load_agent()
     with st.chat_message("assistant"):
         tool_container = st.container()
         with tool_container:
