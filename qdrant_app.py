@@ -8,7 +8,7 @@ import streamlit as st
 from jaxn import JSONParserHandler, StreamingJSONParser
 from pydantic_ai.messages import FunctionToolCallEvent, ModelRequest, ModelResponse, TextPart
 
-from research_qdrant import SearchResultResponse, create_research_agent
+from habit_agent import SearchResultResponse, create_research_agent
 
 logfire.configure()
 
