@@ -1,13 +1,20 @@
 import os
+import re
 from threading import Lock
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Union
 
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qmodels
 from sentence_transformers import SentenceTransformer
 
 
+IntLike = Union[str, int, float]
+
+
 class QdrantSearchClient:
+
+    DEFAULT_RESULTS = 15
+    DEFAULT_CANDIDATES = 100
 
     def __init__(
         self,
@@ -18,6 +25,8 @@ class QdrantSearchClient:
         prefer_grpc: bool = False,
     ):
         self.payload_fields = ["chunk", "episode_name", "start", "end"]
+        self.default_num_results = self.DEFAULT_RESULTS
+        self.default_num_candidates = self.DEFAULT_CANDIDATES
 
         model_name = "all-MPNet-base-v2"
         self.embedding_model = SentenceTransformer(model_name)
@@ -66,19 +75,52 @@ class QdrantSearchClient:
             return vector
         return list(vector)
 
+    @staticmethod
+    def _coerce_positive_int(value: Optional[IntLike], default: int) -> int:
+        """
+        Convert user/tool supplied values into positive integers.
+        Falls back to default when conversion fails.
+        """
+        if value is None:
+            return default
+        if isinstance(value, bool):
+            return default
+        if isinstance(value, (int, float)):
+            try:
+                coerced = int(value)
+            except (TypeError, ValueError):
+                return default
+            return max(coerced, 1)
+        if isinstance(value, str):
+            stripped = value.strip()
+            if not stripped:
+                return default
+            # Extract the first integer found in the string if possible.
+            match = re.search(r"-?\d+", stripped)
+            if match:
+                try:
+                    coerced = int(match.group())
+                    return max(coerced, 1)
+                except (TypeError, ValueError):
+                    return default
+            return default
+        return default
+
     def search_embeddings(
         self,
         query: str,
         collection_name="transcripts",
-        num_results=15,
-        num_candidates=100,
+        num_results: Optional[IntLike] = 15,
+        num_candidates: Optional[IntLike] = 100,
     ) -> List[dict[str, str]]:
         
         if not query:
             raise ValueError("query is required.")
 
-        limit = num_results or self.num_results
-        candidates = num_candidates or max(limit * 5, self.num_candidates)
+        limit = self._coerce_positive_int(num_results, self.default_num_results)
+        candidates = self._coerce_positive_int(
+            num_candidates, max(limit * 5, self.default_num_candidates)
+        )
         vector = self.embed_query(query)
 
         params = qmodels.SearchParams(hnsw_ef=candidates, exact=False)
@@ -126,7 +168,7 @@ def create_qdrant_search_tools(
     **client_kwargs,
 ) -> tuple[
     Callable[[str], List[float]],
-    Callable[[str, Optional[str], Optional[int], Optional[int]], List[dict[str, str]]],
+    Callable[[str, Optional[str], Optional[IntLike], Optional[IntLike]], List[dict[str, str]]],
 ]:
     """
     Factory that returns embedding and search callables backed by Qdrant.
@@ -144,15 +186,24 @@ def create_qdrant_search_tools(
     def search(
         query: str,
         collection_name: Optional[str] = None,
-        num_results: Optional[int] = None,
-        num_candidates: Optional[int] = None,
+        num_results: Optional[IntLike] = None,
+        num_candidates: Optional[IntLike] = None,
     ) -> List[dict[str, str]]:
-        target_collection = collection_name or client.collection_name if hasattr(client, "collection_name") else "transcripts"
+        target_collection = (
+            collection_name
+            or client.collection_name
+            if hasattr(client, "collection_name")
+            else "transcripts"
+        )
         return client.search_embeddings(
             query=query,
             collection_name=target_collection,
-            num_results=num_results or client.DEFAULT_RESULTS if hasattr(client, "DEFAULT_RESULTS") else 15,
-            num_candidates=num_candidates or client.DEFAULT_CANDIDATES if hasattr(client, "DEFAULT_CANDIDATES") else 100,
+            num_results=client._coerce_positive_int(
+                num_results, client.default_num_results
+            ),
+            num_candidates=client._coerce_positive_int(
+                num_candidates, client.default_num_candidates
+            ),
         )
     search.__name__ = "vector_search"
 
