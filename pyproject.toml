@@ -3,7 +3,7 @@ name = "huberman-agent"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python=="3.11"
+requires-python==3.11.14
 dependencies = [
     "faster-whisper>=1.2.1",
     "jaxn>=0.0.1",
